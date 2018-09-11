@@ -7,13 +7,13 @@ from exceptions import *
 
 import os
 
-
 class Window(Frame):
 
     infoLabel: Label
     summonerLabel: Label
     duoLabel: Label
     progressLabel: Label
+    resultsLabel: Label
 
     progressCount: int = 0
     progressTotal: int = 0
@@ -57,10 +57,14 @@ class Window(Frame):
         p = Label(master=self, text="0/0 - 0%")
         p.pack(side='top', anchor='n')
 
+        r = Label(master=self, text="")
+        r.pack(side='bottom', anchor='s', pady=100)
+
         self.infoLabel = i
         self.summonerLabel = s
         self.duoLabel = d
         self.progressLabel = p
+        self.resultsLabel = r
 
     def __init_progress(self):
         p = ttk.Progressbar(master=self, orient='horizontal', mode='determinate', maximum=100)
@@ -102,12 +106,16 @@ class App(Tk):
     progress: int
     watcher: RiotWatcher
 
+    summoner: RiotWatcher.summoner
+
     DEFAULT_INFO: str = "Click the File Menu and select Find Games"
     DEFAULT_SUMMONER: str = "No summoner searched yet"
     DEFAULT_DUO: str = "No duo searched yet"
 
     def __init__(self):
         Tk.__init__(self)
+
+
 
         self.progress = 0
         self.watcher = RiotWatcher(os.environ.get('RGAPI'))
@@ -134,6 +142,7 @@ class App(Tk):
         while True:
             try:
                 summoner = self.get_summoner()
+                self.summoner = summoner
                 break
             except HTTPError as e:
                 self.show_error("Could not find summoner. Please try again")
@@ -186,6 +195,9 @@ class App(Tk):
         print("Now searching user %s's last %d games for summoners:\n%s" % (summoner['name'], iterations, names))
         (count, playCount, wins, losses) = self.analyze_history(iterations, summoner, duos)
 
+        self.__update_info("All done!")
+        self.__update_results(count, playCount, wins, losses)
+
         print("Count: %d, Play Count: %d, Wins: %d, Losses: %d, Win Percentage: %.2f%%" % (count, playCount, wins, losses, (wins / playCount * 100)))
 
     def __update_info(self, i):
@@ -202,6 +214,11 @@ class App(Tk):
 
     def __update_max(self, m):
         self.window.update_progress(m)
+
+    def __update_results(self, c, p, w, l):
+        r = w / p * 100
+        s = "Search Results\nGames Searched: %d\nDuo Games: %d\nGames Won: %d\nGames Lost: %d\nWin Percentage: %.2f%%" % (c, p, w, l, r)
+        self.window.resultsLabel['text'] = s
 
     def __check_summoner_valid(self, s):
         if s is None:
@@ -317,3 +334,8 @@ class App(Tk):
     def show_error(self, e):
         messagebox.showerror("Error", e, parent=self)
 
+    def save_summoner(self):
+        pass
+
+    def retrieve_summoner(self):
+        pass
